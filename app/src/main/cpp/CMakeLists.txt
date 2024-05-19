@@ -5,14 +5,15 @@ project("media")
 # 支持C++11标准和GNU扩展特性
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11")
 
-# 1. 定义so库和头文件所在目录，方面后面使用
+# 1. 定义头文件和库文件所在目录，方面后面使用
 set(ffmpeg_head_dir ${CMAKE_CURRENT_SOURCE_DIR}/include/ffmpeg)
 set(ffmpeg_lib_dir ${CMAKE_CURRENT_SOURCE_DIR}/../jniLibs/${ANDROID_ABI})
+#打印路径
 message(ffmpeg_head_dir: ${ffmpeg_head_dir})
 message(ffmpeg_lib_dir: ${ffmpeg_lib_dir})
 # 2. 添加头文件目录
 include_directories(${ffmpeg_head_dir})
-
+# 3. 指定待链接的库文件所在目录
 link_directories(${ffmpeg_lib_dir})
 
 add_library(${PROJECT_NAME} SHARED
