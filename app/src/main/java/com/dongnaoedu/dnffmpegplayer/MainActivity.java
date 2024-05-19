@@ -19,7 +19,7 @@ public class MainActivity extends Activity {
 
 	public void mDecode(View btn){
 		String input = new File(Environment.getExternalStorageDirectory(),"mvtest.mp4").getAbsolutePath();
-		String output = new File(Environment.getExternalStorageDirectory(),"output_1280x720_yuv420p.yuv").getAbsolutePath();
+		String output = new File(Environment.getExternalStorageDirectory(),"output.yuv").getAbsolutePath();
 		VideoUtils.decode(input, output);
 	}
 }
