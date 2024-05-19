@@ -9,7 +9,7 @@ android {
     defaultConfig {
         applicationId "com.cxp.androidstudy"
         minSdk 23
-        targetSdk 26
+        targetSdk 23
         versionCode 1
         versionName "1.0"
 

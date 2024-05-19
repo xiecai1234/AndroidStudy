@@ -13,6 +13,6 @@ public class VideoUtils {
 		System.loadLibrary("postproc-53");
 		System.loadLibrary("avfilter-5");
 		System.loadLibrary("avdevice-56");
-		System.loadLibrary("androidstudy");
+		System.loadLibrary("media");
 	}
 }
