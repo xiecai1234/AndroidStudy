@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.0)
+project(CALC)
+message("source path: ${PROJECT_SOURCE_DIR}")
+aux_source_directory(${PROJECT_SOURCE_DIR} SRC)
+add_executable(app ${SRC})
