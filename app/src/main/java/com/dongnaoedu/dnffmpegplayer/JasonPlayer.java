@@ -1,8 +1,18 @@
 package com.dongnaoedu.dnffmpegplayer;
 
-public class VideoUtils {
+import android.view.Surface;
 
-	public native static void decode(String input, String output);
+/**
+ * 视频播放的控制器
+ * @author Jason
+ * QQ: 1476949583
+ * @date 2016年9月19日
+ * @version 1.0
+ */
+public class JasonPlayer {
+
+	public native void render(String input,Surface surface);
+	
 	
 	static{
 		System.loadLibrary("avutil-54");
