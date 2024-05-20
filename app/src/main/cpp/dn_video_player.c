@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <jni.h>
 #include <unistd.h>
 #include <android/log.h>
 #include <android/native_window_jni.h>
@@ -75,11 +76,11 @@ JNIEXPORT void JNICALL Java_com_dongnaoedu_dnffmpegplayer_JasonPlayer_render
 	//绘制时的缓冲区
 	ANativeWindow_Buffer outBuffer;
 
-	int got_frame, framecount = 0;
+	int len ,got_frame, framecount = 0;
 	//6.一阵一阵读取压缩的视频数据AVPacket
 	while(av_read_frame(pFormatCtx,packet) >= 0){
 		//解码AVPacket->AVFrame
-        avcodec_decode_video2(pCodeCtx, yuv_frame, &got_frame, packet);
+		len = avcodec_decode_video2(pCodeCtx, yuv_frame, &got_frame, packet);
 
 		//Zero if no frame could be decompressed
 		//非零，正在解码

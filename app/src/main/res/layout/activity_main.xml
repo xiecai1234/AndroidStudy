@@ -3,27 +3,27 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <com.dongnaoedu.dnffmpegplayer.view.VideoView
+    <com.dongnaoedu.dnffmpegplayer.view.VideoView 
         android:id="@+id/video_view"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"/>
 
     <LinearLayout
-        android:background="@color/white"
+		android:background="@color/white"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal">
-        <Spinner
-            android:id="@+id/sp_video"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            />
+        <Spinner 
+		    android:id="@+id/sp_video"
+		    android:layout_width="wrap_content"
+		    android:layout_height="wrap_content"
+		    />
         <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="开始"
-            android:onClick="mPlay" />
-
+	       android:layout_width="wrap_content"
+	       android:layout_height="wrap_content"
+	       android:text="开始"
+	       android:onClick="mPlay" />
+        
     </LinearLayout>
-
+    
 </FrameLayout>

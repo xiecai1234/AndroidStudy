@@ -4,6 +4,7 @@ import java.io.File;
 
 import com.cxp.androidstudy.R;
 import com.dongnaoedu.dnffmpegplayer.view.VideoView;
+
 import android.app.Activity;
 import android.os.Bundle;
 import android.os.Environment;
@@ -34,10 +35,14 @@ public class MainActivity extends Activity {
 	}
 
 	public void mPlay(View btn){
-		String video = sp_video.getSelectedItem().toString();
-		String input = new File(Environment.getExternalStorageDirectory(),video).getAbsolutePath();
+		//String video = sp_video.getSelectedItem().toString();
+		//String input = new File(Environment.getExternalStorageDirectory(),video).getAbsolutePath();
 		//Surface传入到Native函数中，用于绘制
-		Surface surface = videoView.getHolder().getSurface();
-		player.render(input, surface);
+		//Surface surface = videoView.getHolder().getSurface();
+		//player.render(input, surface);
+		String input = new File(Environment.getExternalStorageDirectory(),"wudie.mp3").getAbsolutePath();
+		String output = new File(Environment.getExternalStorageDirectory(),"wudie.pcm").getAbsolutePath();
+//		player.sound(input, output);
+		player.createAudioTrack();
 	}
 }

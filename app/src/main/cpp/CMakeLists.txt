@@ -18,7 +18,8 @@ include_directories(${yuv_head_dir})
 link_directories(${lib_dir})
 
 add_library(${PROJECT_NAME} SHARED
-        dn_ffmpeg_player.c
+        dn_video_player.c
+        dn_audio_player.c
 )
 
 # Specifies libraries CMake should link to your target library. You
