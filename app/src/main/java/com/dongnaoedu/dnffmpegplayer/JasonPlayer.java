@@ -3,6 +3,7 @@ package com.dongnaoedu.dnffmpegplayer;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
+import android.util.Log;
 import android.view.Surface;
 
 /**
@@ -18,17 +19,28 @@ public class JasonPlayer {
 	
 	public native void sound(String input,String output);
 	
+	
 	/**
 	 * 创建一个AudioTrac对象，用于播放
+	 * @param nb_channels
 	 * @return
 	 */
-	public AudioTrack createAudioTrack(){
-		int sampleRateInHz = 44100;
+	public AudioTrack createAudioTrack(int sampleRateInHz, int nb_channels){
+		//固定格式的音频码流
 		int audioFormat = AudioFormat.ENCODING_PCM_16BIT;
+		Log.i("jason", "nb_channels:"+nb_channels);
 		//声道布局
-		int channelConfig = AudioFormat.CHANNEL_OUT_STEREO;
+		int channelConfig;
+		if(nb_channels == 1){
+			channelConfig = AudioFormat.CHANNEL_OUT_MONO;
+		}else if(nb_channels == 2){
+			channelConfig = AudioFormat.CHANNEL_OUT_STEREO;
+		}else{
+			channelConfig = AudioFormat.CHANNEL_OUT_STEREO;
+		}
 		
 		int bufferSizeInBytes = AudioTrack.getMinBufferSize(sampleRateInHz, channelConfig, audioFormat);
+		
 		AudioTrack audioTrack = new AudioTrack(
 				AudioManager.STREAM_MUSIC, 
 				sampleRateInHz, channelConfig, 
@@ -37,7 +49,7 @@ public class JasonPlayer {
 		//播放
 		//audioTrack.play();
 		//写入PCM
-		//audioTrack.write(byte[]buffer);
+		//audioTrack.write(audioData, offsetInBytes, sizeInBytes);
 		return audioTrack;
 	}
 	
@@ -50,6 +62,6 @@ public class JasonPlayer {
 		System.loadLibrary("postproc-53");
 		System.loadLibrary("avfilter-5");
 		System.loadLibrary("avdevice-56");
-		System.loadLibrary("media");
+		System.loadLibrary("myffmpeg");
 	}
 }

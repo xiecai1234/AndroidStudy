@@ -1,6 +1,5 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <jni.h>
 #include <unistd.h>
 #include <android/log.h>
 #include <android/native_window_jni.h>
@@ -93,7 +92,7 @@ JNIEXPORT void JNICALL Java_com_dongnaoedu_dnffmpegplayer_JasonPlayer_render
 
 			//设置rgb_frame的属性（像素格式、宽高）和缓冲区
 			//rgb_frame缓冲区与outBuffer.bits是同一块内存
-			avpicture_fill((AVPicture *)rgb_frame, outBuffer.bits, PIX_FMT_RGBA, pCodeCtx->width, pCodeCtx->height);
+			avpicture_fill((AVPicture *)rgb_frame, outBuffer.bits, AV_PIX_FMT_RGBA, pCodeCtx->width, pCodeCtx->height);
 
 			//YUV->RGBA_8888
 			I420ToARGB(yuv_frame->data[0],yuv_frame->linesize[0],

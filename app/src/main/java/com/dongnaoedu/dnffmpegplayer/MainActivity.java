@@ -35,14 +35,13 @@ public class MainActivity extends Activity {
 	}
 
 	public void mPlay(View btn){
-		//String video = sp_video.getSelectedItem().toString();
-		//String input = new File(Environment.getExternalStorageDirectory(),video).getAbsolutePath();
+		String video = sp_video.getSelectedItem().toString();
+//		String input = new File(Environment.getExternalStorageDirectory(),video).getAbsolutePath();
 		//Surface传入到Native函数中，用于绘制
 		//Surface surface = videoView.getHolder().getSurface();
 		//player.render(input, surface);
-		String input = new File(Environment.getExternalStorageDirectory(),"wudie.mp3").getAbsolutePath();
+		String input = new File(Environment.getExternalStorageDirectory(),video).getAbsolutePath();
 		String output = new File(Environment.getExternalStorageDirectory(),"wudie.pcm").getAbsolutePath();
-//		player.sound(input, output);
-		player.createAudioTrack();
+		player.sound(input, output);
 	}
 }

@@ -2,8 +2,8 @@
     <string name="app_name">AndroidStudy</string>
     <string-array name="video_list">
         <item>mvtest.mp4</item>
-        <item>Titanic.mkv</item>
-        <item>Warcraft3_End.avi</item>
-        <item>hehuoren.flv</item>
+        <item>wudie.mp3</item>
+        <!--<item>Warcraft3_End.avi</item>
+        <item>hehuoren.flv</item>-->
     </string-array>
 </resources>
