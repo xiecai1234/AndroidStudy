@@ -14,11 +14,10 @@ import android.widget.ArrayAdapter;
 import android.widget.Spinner;
 
 public class MainActivity extends Activity {
-
 	private JasonPlayer player;
 	private VideoView videoView;
 	private Spinner sp_video;
-
+	PThreadTest pThreadTest;
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -26,6 +25,7 @@ public class MainActivity extends Activity {
 		videoView = (VideoView) findViewById(R.id.video_view);
 		sp_video = (Spinner) findViewById(R.id.sp_video);
 		player = new JasonPlayer();
+		pThreadTest = new PThreadTest();
 		//多种格式的视频列表
 		String[] videoArray = getResources().getStringArray(R.array.video_list);
 		ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, 
@@ -43,5 +43,9 @@ public class MainActivity extends Activity {
 		String input = new File(Environment.getExternalStorageDirectory(),video).getAbsolutePath();
 		String output = new File(Environment.getExternalStorageDirectory(),"wudie.pcm").getAbsolutePath();
 		player.sound(input, output);
+	}
+
+	public void callNative(View btn){
+		pThreadTest.test();
 	}
 }

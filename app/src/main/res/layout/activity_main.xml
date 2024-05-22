@@ -9,6 +9,7 @@
         android:layout_height="fill_parent"/>
 
     <LinearLayout
+		android:id="@+id/ll_play"
 		android:background="@color/white"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -23,7 +24,12 @@
 	       android:layout_height="wrap_content"
 	       android:text="开始"
 	       android:onClick="mPlay" />
-        
+		<Button
+			android:layout_marginStart="16dp"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:text="调用native"
+			android:onClick="callNative" />
     </LinearLayout>
-    
+
 </FrameLayout>

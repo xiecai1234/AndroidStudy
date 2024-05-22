@@ -16,6 +16,10 @@ include_directories(${ffmpeg_head_dir})
 include_directories(${yuv_head_dir})
 # 3. 指定待链接的库文件所在目录
 link_directories(${lib_dir})
+# 查找某个路径下的所有源文件
+file(GLOB SRC_LIST ${CMAKE_CURRENT_SOURCE_DIR}/pthread/*.c)
+
+add_library(test_thread SHARED ${SRC_LIST})
 
 add_library(${PROJECT_NAME} SHARED
         dn_video_player.c
@@ -39,4 +43,10 @@ target_link_libraries(${PROJECT_NAME}
         avdevice-56
         yuv
         jnigraphics
+)
+
+target_link_libraries(test_thread
+        # List libraries link to the target library
+        android
+        log
 )
