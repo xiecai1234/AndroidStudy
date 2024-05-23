@@ -94,7 +94,7 @@ JNIEXPORT void JNICALL Java_com_dongnaoedu_dnffmpegplayer_JasonPlayer_render
 			//rgb_frame缓冲区与outBuffer.bits是同一块内存
 			avpicture_fill((AVPicture *)rgb_frame, outBuffer.bits, PIX_FMT_RGBA, pCodeCtx->width, pCodeCtx->height);
 
-			//YUV->RGBA_8888
+			//YUV->RGBA_8888  花屏可能是转码方式不对或者不支持RGBA_8888
 			I420ToARGB(yuv_frame->data[0],yuv_frame->linesize[0],
 					yuv_frame->data[2],yuv_frame->linesize[2],
 					yuv_frame->data[1],yuv_frame->linesize[1],
