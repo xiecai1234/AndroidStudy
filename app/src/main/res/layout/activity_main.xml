@@ -1,35 +1,13 @@
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
 
-    <com.dongnaoedu.dnffmpegplayer.view.VideoView 
-        android:id="@+id/video_view"
+    <Button
         android:layout_width="fill_parent"
-        android:layout_height="fill_parent"/>
-
-    <LinearLayout
-		android:id="@+id/ll_play"
-		android:background="@color/white"
-        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
-        <Spinner 
-		    android:id="@+id/sp_video"
-		    android:layout_width="wrap_content"
-		    android:layout_height="wrap_content"
-		    />
-        <Button
-	       android:layout_width="wrap_content"
-	       android:layout_height="wrap_content"
-	       android:text="开始"
-	       android:onClick="mPlay" />
-		<Button
-			android:layout_marginStart="16dp"
-			android:layout_width="wrap_content"
-			android:layout_height="wrap_content"
-			android:text="调用native"
-			android:onClick="callNative" />
-    </LinearLayout>
+        android:text="测试"
+        android:onClick="mTest" />
 
-</FrameLayout>
+</LinearLayout>
