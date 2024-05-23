@@ -3,18 +3,17 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <jni.h>
-#include <android/log.h>
-#define LOGI(FORMAT,...) __android_log_print(ANDROID_LOG_INFO,"jason",FORMAT,##__VA_ARGS__);
-#define LOGE(FORMAT,...) __android_log_print(ANDROID_LOG_ERROR,"jason",FORMAT,##__VA_ARGS__);
-void* thr_fun(void* arg){
+#include "../include/utils/logger.h"
+
+void* test1_thr_fun(void* arg){
 	char* no = (char*)arg;
 	int i = 0;
 	for(; i < 10; i++){
         LOGI("%s mythread, i:%d\n",no,i);
 		if(i==5){
-			//线程退出（自杀）
+			//线程退出（自杀），指定的参数是return回去的值。
 			pthread_exit((void *) 2);
-			//他杀pthread_cancel			
+			//任何一个线程可以结束另一个线程  他杀pthread_cancel(tid)			
 		}
 	}	
 	return (void *) 1;
@@ -22,16 +21,16 @@ void* thr_fun(void* arg){
 
 
 JNIEXPORT void JNICALL
-Java_com_dongnaoedu_dnffmpegplayer_PThreadTest_test(JNIEnv *env, jobject thiz) {
-    printf("main thread\n");
+Java_com_dongnaoedu_dnffmpegplayer_PThreadTest_test1(JNIEnv *env, jobject thiz) {
+    LOGI("main thread\n");
     //线程id
     pthread_t tid;
     //线程的属性，NULL默认属性
-    //thr_fun，线程创建之后执行的函数
-    pthread_create(&tid,NULL,thr_fun,"1");
+    //test1_thr_fun，线程创建之后执行的函数，"1"是给thr_fun传的参数
+    pthread_create(&tid, NULL, test1_thr_fun, "1");
     void* rval;
-    //等待tid线程结束
-    //thr_fun与退出时传入的参数，都作为第二个参数的内容
+	//pthread_join 本线程一直等待tid线程结束
+	//test1_thr_fun的值与pthread_exit退出时传入的参数，都作为pthread_join函数第二个参数的内容,不需要返回值可以写NULL
     pthread_join(tid,&rval);
     LOGI("myrval:%d\n",(int)rval);
 }

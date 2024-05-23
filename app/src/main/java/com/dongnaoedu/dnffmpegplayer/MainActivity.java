@@ -8,7 +8,6 @@ import com.dongnaoedu.dnffmpegplayer.view.VideoView;
 import android.app.Activity;
 import android.os.Bundle;
 import android.os.Environment;
-import android.view.Surface;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
@@ -46,6 +45,6 @@ public class MainActivity extends Activity {
 	}
 
 	public void callNative(View btn){
-		pThreadTest.test();
+		pThreadTest.test3();
 	}
 }
