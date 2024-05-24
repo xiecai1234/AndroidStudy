@@ -78,36 +78,37 @@ JNIEXPORT void JNICALL Java_com_dongnaoedu_dnffmpegplayer_JasonPlayer_render
 	int len ,got_frame, framecount = 0;
 	//6.一阵一阵读取压缩的视频数据AVPacket
 	while(av_read_frame(pFormatCtx,packet) >= 0){
-		//解码AVPacket->AVFrame
-		len = avcodec_decode_video2(pCodeCtx, yuv_frame, &got_frame, packet);
+		if(packet->stream_index == video_stream_idx){
+			//解码AVPacket->AVFrame
+			len = avcodec_decode_video2(pCodeCtx, yuv_frame, &got_frame, packet);
 
-		//Zero if no frame could be decompressed
-		//非零，正在解码
-		if(got_frame){
-			LOGI("解码%d帧",framecount++);
-			//lock
-			//设置缓冲区的属性（宽、高、像素格式）
-			ANativeWindow_setBuffersGeometry(nativeWindow, pCodeCtx->width, pCodeCtx->height,WINDOW_FORMAT_RGBA_8888);
-			ANativeWindow_lock(nativeWindow,&outBuffer,NULL);
+			//Zero if no frame could be decompressed
+			//非零，正在解码
+			if(got_frame){
+				LOGI("解码%d帧",framecount++);
+				//lock
+				//设置缓冲区的属性（宽、高、像素格式）
+				ANativeWindow_setBuffersGeometry(nativeWindow, pCodeCtx->width, pCodeCtx->height,WINDOW_FORMAT_RGBA_8888);
+				ANativeWindow_lock(nativeWindow,&outBuffer,NULL);
 
-			//设置rgb_frame的属性（像素格式、宽高）和缓冲区
-			//rgb_frame缓冲区与outBuffer.bits是同一块内存
-			avpicture_fill((AVPicture *)rgb_frame, outBuffer.bits, AV_PIX_FMT_RGBA, pCodeCtx->width, pCodeCtx->height);
+				//设置rgb_frame的属性（像素格式、宽高）和缓冲区
+				//rgb_frame缓冲区与outBuffer.bits是同一块内存
+				avpicture_fill((AVPicture *)rgb_frame, outBuffer.bits, AV_PIX_FMT_RGBA, pCodeCtx->width, pCodeCtx->height);
 
-			//YUV->RGBA_8888
-			I420ToARGB(yuv_frame->data[0],yuv_frame->linesize[0],
-					yuv_frame->data[2],yuv_frame->linesize[2],
-					yuv_frame->data[1],yuv_frame->linesize[1],
-					rgb_frame->data[0], rgb_frame->linesize[0],
-					pCodeCtx->width,pCodeCtx->height);
+				//YUV->RGBA_8888
+				I420ToARGB(yuv_frame->data[0],yuv_frame->linesize[0],
+						yuv_frame->data[2],yuv_frame->linesize[2],
+						yuv_frame->data[1],yuv_frame->linesize[1],
+						rgb_frame->data[0], rgb_frame->linesize[0],
+						pCodeCtx->width,pCodeCtx->height);
 
-			//unlock
-			ANativeWindow_unlockAndPost(nativeWindow);
+				//unlock
+				ANativeWindow_unlockAndPost(nativeWindow);
 
-			usleep(1000 * 16);
+				usleep(1000 * 16);
+			}
 
 		}
-
 		av_free_packet(packet);
 	}
 

@@ -14,7 +14,7 @@
         android:theme="@style/Theme.AndroidStudy"
         tools:targetApi="31">
         <activity
-            android:name="com.dongnaoedu.androidlinux.MainActivity"
+            android:name="com.dongnaoedu.dnffmpegplayer.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

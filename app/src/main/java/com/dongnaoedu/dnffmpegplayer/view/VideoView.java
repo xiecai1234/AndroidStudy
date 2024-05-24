@@ -31,7 +31,7 @@ public class VideoView extends SurfaceView {
 	}
 	
 	private void init(){
-		//初始化，SufaceView绘制的像素格式
+		//初始化，SufaceView绘制的像素格式 可能会不支持RGBA_8888
 		SurfaceHolder holder = getHolder();
 		holder.setFormat(PixelFormat.RGBA_8888);
 	}

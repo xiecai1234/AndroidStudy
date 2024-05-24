@@ -19,6 +19,10 @@ public class JasonPlayer {
 	
 	public native void sound(String input,String output);
 	
+	public native void play(String input,Surface surface);
+
+	public native void locationError();
+	
 	
 	/**
 	 * 创建一个AudioTrac对象，用于播放

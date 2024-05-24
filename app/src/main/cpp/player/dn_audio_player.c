@@ -64,7 +64,7 @@ JNIEXPORT void JNICALL Java_com_dongnaoedu_dnffmpegplayer_JasonPlayer_sound
 	SwrContext *swrCtx = swr_alloc();
 
 	//重采样设置参数-------------start
-	//输入的采样格式 位数
+	//输入的采样格式
 	enum AVSampleFormat in_sample_fmt = codecCtx->sample_fmt;
 	//输出采样格式16bit PCM
 	enum AVSampleFormat out_sample_fmt = AV_SAMPLE_FMT_S16;
@@ -74,7 +74,7 @@ JNIEXPORT void JNICALL Java_com_dongnaoedu_dnffmpegplayer_JasonPlayer_sound
 	int out_sample_rate = in_sample_rate;
 	//获取输入的声道布局
 	//根据声道个数获取默认的声道布局（2个声道，默认立体声stereo）
-//	av_get_default_channel_layout(codecCtx->channels);
+	//av_get_default_channel_layout(codecCtx->channels);
 	uint64_t in_ch_layout = codecCtx->channel_layout;
 	//输出的声道布局（立体声）
 	uint64_t out_ch_layout = AV_CH_LAYOUT_STEREO;
@@ -87,6 +87,7 @@ JNIEXPORT void JNICALL Java_com_dongnaoedu_dnffmpegplayer_JasonPlayer_sound
 
 	//输出的声道个数
 	int out_channel_nb = av_get_channel_layout_nb_channels(out_ch_layout);
+
 	//重采样设置参数-------------end
 
 	//JNI begin------------------
@@ -104,8 +105,8 @@ JNIEXPORT void JNICALL Java_com_dongnaoedu_dnffmpegplayer_JasonPlayer_sound
 
 	//AudioTrack.write
 	jmethodID audio_track_write_mid = (*env)->GetMethodID(env,audio_track_class,"write","([BII)I");
-	//JNI end------------------
 
+	//JNI end------------------
 	FILE *fp_pcm = fopen(output_cstr,"wb");
 
 	//16bit 44100 PCM 数据
@@ -142,7 +143,7 @@ JNIEXPORT void JNICALL Java_com_dongnaoedu_dnffmpegplayer_JasonPlayer_sound
 				//AudioTrack.write PCM数据
 				(*env)->CallIntMethod(env,audio_track,audio_track_write_mid,
 						audio_sample_array,0,out_buffer_size);
-				//释放局部引用 否则会内存溢出
+				//释放局部引用
 				(*env)->DeleteLocalRef(env,audio_sample_array);
 				usleep(1000 * 16);
 			}
@@ -160,4 +161,5 @@ JNIEXPORT void JNICALL Java_com_dongnaoedu_dnffmpegplayer_JasonPlayer_sound
 
 	(*env)->ReleaseStringUTFChars(env,input_jstr,input_cstr);
 	(*env)->ReleaseStringUTFChars(env,output_jstr,output_cstr);
+
 }
