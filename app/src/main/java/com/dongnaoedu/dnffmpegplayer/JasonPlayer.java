@@ -20,8 +20,6 @@ public class JasonPlayer {
 	public native void sound(String input,String output);
 	
 	public native void play(String input,Surface surface);
-
-	public native void locationError();
 	
 	
 	/**
@@ -36,11 +34,11 @@ public class JasonPlayer {
 		//声道布局
 		int channelConfig;
 		if(nb_channels == 1){
-			channelConfig = AudioFormat.CHANNEL_OUT_MONO;
+			channelConfig = android.media.AudioFormat.CHANNEL_OUT_MONO;
 		}else if(nb_channels == 2){
-			channelConfig = AudioFormat.CHANNEL_OUT_STEREO;
+			channelConfig = android.media.AudioFormat.CHANNEL_OUT_STEREO;
 		}else{
-			channelConfig = AudioFormat.CHANNEL_OUT_STEREO;
+			channelConfig = android.media.AudioFormat.CHANNEL_OUT_STEREO;
 		}
 		
 		int bufferSizeInBytes = AudioTrack.getMinBufferSize(sampleRateInHz, channelConfig, audioFormat);

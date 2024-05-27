@@ -44,9 +44,7 @@ public class MainActivity extends Activity {
 		//String input = new File(Environment.getExternalStorageDirectory(),"hehuoren.flv").getAbsolutePath();
 		//String output = new File(Environment.getExternalStorageDirectory(),"Justin Bieber - Boyfriend.pcm").getAbsolutePath();
 		//player.sound(input, output);
-
-//		player.locationError();
-
+		
 		player.play(input,surface);
 	}
 }
