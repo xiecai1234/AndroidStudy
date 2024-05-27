@@ -7,7 +7,7 @@ android {
     compileSdk 34
 
     defaultConfig {
-        applicationId "com.cxp.androidstudy"
+        applicationId "com.cxp.pushstream"
         minSdk 23
         targetSdk 23
         versionCode 1

@@ -18,12 +18,12 @@ include_directories(${yuv_head_dir})
 link_directories(${lib_dir})
 
 # 查找某个路径下的所有源文件
-file(GLOB SRC_LIST ${CMAKE_CURRENT_SOURCE_DIR}/player/*.c)
-add_library(${PROJECT_NAME} SHARED ${SRC_LIST})
+file(GLOB SRC_LIST ${CMAKE_CURRENT_SOURCE_DIR}/push/*.c)
+add_library(push_stream SHARED ${SRC_LIST})
 # Specifies libraries CMake should link to your target library. You
 # can link libraries from various origins, such as libraries defined in this
 # build script, prebuilt third-party libraries, or Android system libraries.
-target_link_libraries(${PROJECT_NAME}
+target_link_libraries(push_stream
         # List libraries link to the target library
         android
         log
@@ -37,20 +37,4 @@ target_link_libraries(${PROJECT_NAME}
         avdevice-56
         yuv
         jnigraphics
-)
-
-# 查找某个路径下的所有源文件
-file(GLOB SRC_LIST ${CMAKE_CURRENT_SOURCE_DIR}/pthread/*.c)
-add_library(test_thread SHARED ${SRC_LIST})
-target_link_libraries(test_thread
-        # List libraries link to the target library
-        android
-        log
-)
-
-add_library(dn_android_linux SHARED ${CMAKE_CURRENT_SOURCE_DIR}/dn_android_linux.c)
-target_link_libraries(dn_android_linux
-        # List libraries link to the target library
-        android
-        log
 )
