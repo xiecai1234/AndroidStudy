@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">PushStream</string>
+    <string name="app_name">Live</string>
     <string-array name="video_list">
         <item>mvtest.mp4</item>
         <item>wudie.mp3</item>
