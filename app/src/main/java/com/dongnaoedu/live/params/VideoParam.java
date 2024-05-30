@@ -13,7 +13,7 @@ public class VideoParam {
 	private int height;
 	// 码率480kbps
 	private int bitrate = 480000;
-	// 帧频默认25帧/s
+	// 帧率默认25帧/s
 	private int fps = 25;
 	private int cameraId;
 

@@ -2,8 +2,9 @@
 #include <android/log.h>
 #include <android/native_window_jni.h>
 #include <android/native_window.h>
-#define LOGI(FORMAT,...) __android_log_print(ANDROID_LOG_INFO,"jason",FORMAT,##__VA_ARGS__)
-#define LOGE(FORMAT,...) __android_log_print(ANDROID_LOG_ERROR,"jason",FORMAT,##__VA_ARGS__)
+
+#define LOGI(FORMAT, ...) __android_log_print(ANDROID_LOG_INFO,"jason",FORMAT,##__VA_ARGS__)
+#define LOGE(FORMAT, ...) __android_log_print(ANDROID_LOG_ERROR,"jason",FORMAT,##__VA_ARGS__)
 
 #include <pthread.h>
 #include <string.h>
@@ -20,39 +21,39 @@
 #define CONNECT_FAILED 101
 #define INIT_FAILED 102
 
-//x264±‡¬Î ‰»ÎÕºœÒYUV420P
+//x264ÁºñÁ†ÅËæìÂÖ•ÂõæÂÉèYUV420P
 x264_picture_t pic_in;
 x264_picture_t pic_out;
-//YUV∏ˆ ˝
+//YUV‰∏™Êï∞
 int y_len, u_len, v_len;
-//x264±‡¬Î¥¶¿Ì∆˜
+//x264ÁºñÁ†ÅÂ§ÑÁêÜÂô®
 x264_t *video_encode_handle;
 
 unsigned int start_time;
-//œﬂ≥Ã¥¶¿Ì
+//Á∫øÁ®ãÂ§ÑÁêÜ
 pthread_mutex_t mutex;
 pthread_cond_t cond;
-//rtmp¡˜√ΩÃÂµÿ÷∑
+//rtmpÊµÅÂ™í‰ΩìÂú∞ÂùÄ
 char *rtmp_path;
-// «∑Ò÷±≤•
+//ÊòØÂê¶Áõ¥Êí≠
 int is_pushing = FALSE;
-//faac“Ù∆µ±‡¬Î¥¶¿Ì∆˜
+//faacÈü≥È¢ëÁºñÁ†ÅÂ§ÑÁêÜÂô®
 faacEncHandle audio_encode_handle;
 
-unsigned long nInputSamples; // ‰»Îµƒ≤…—˘∏ˆ ˝
-unsigned long nMaxOutputBytes; //±‡¬Î ‰≥ˆ÷Æ∫Ûµƒ◊÷Ω⁄ ˝
+unsigned long nInputSamples; //ËæìÂÖ•ÁöÑÈááÊ†∑‰∏™Êï∞
+unsigned long nMaxOutputBytes; //ÁºñÁ†ÅËæìÂá∫‰πãÂêéÁöÑÂ≠óËäÇÊï∞
 
 jobject jobj_push_native; //Global ref
-jclass jcls_push_native;
-jmethodID jmid_throw_native_error;
+jclass jcls_push_native; //Global ref
+jmethodID jmid_throw_native_error; //local ref
 JavaVM *javaVM;
 
 /**
- * º”»ÎRTMPPacket∂”¡–£¨µ»¥˝∑¢ÀÕœﬂ≥Ã∑¢ÀÕ
+ * Âä†ÂÖ•RTMPPacketÈòüÂàóÔºåÁ≠âÂæÖÂèëÈÄÅÁ∫øÁ®ãÂèëÈÄÅ
  */
-void add_rtmp_packet(RTMPPacket *packet){
+void add_rtmp_packet(RTMPPacket *packet) {
     pthread_mutex_lock(&mutex);
-    if(is_pushing){
+    if (is_pushing) {
         queue_append_last(packet);
     }
     pthread_cond_signal(&cond);
@@ -60,482 +61,477 @@ void add_rtmp_packet(RTMPPacket *packet){
 }
 
 /**
- * ÃÌº”AACÕ∑–≈œ¢
+ * Ê∑ªÂä†AACÂ§¥‰ø°ÊÅØ
  */
-void add_aac_sequence_header(){
-	//ªÒ»°aacÕ∑–≈œ¢µƒ≥§∂»
-	unsigned char *buf;
-	unsigned long len; //≥§∂»
-	faacEncGetDecoderSpecificInfo(audio_encode_handle,&buf,&len);
-	int body_size = 2 + len;
-	RTMPPacket *packet = malloc(sizeof(RTMPPacket));
-	//RTMPPacket≥ı ºªØ
-	RTMPPacket_Alloc(packet,body_size);
-	RTMPPacket_Reset(packet);
-	unsigned char * body = packet->m_body;
-	//Õ∑–≈œ¢≈‰÷√
-	/*AF 00 + AAC RAW data*/
-	body[0] = 0xAF;//10 5 SoundFormat(4bits):10=AAC,SoundRate(2bits):3=44kHz,SoundSize(1bit):1=16-bit samples,SoundType(1bit):1=Stereo sound
-	body[1] = 0x00;//AACPacketType:0±Ì æAAC sequence header
-	memcpy(&body[2], buf, len); /*spec_buf «AAC sequence header ˝æ›*/
-	packet->m_packetType = RTMP_PACKET_TYPE_AUDIO;
-	packet->m_nBodySize = body_size;
-	packet->m_nChannel = 0x04;
-	packet->m_hasAbsTimestamp = 0;
-	packet->m_nTimeStamp = 0;
-	packet->m_headerType = RTMP_PACKET_SIZE_MEDIUM;
-	add_rtmp_packet(packet);
-	free(buf);
+void add_aac_sequence_header() {
+    //Ëé∑ÂèñaacÂ§¥‰ø°ÊÅØÁöÑÈïøÂ∫¶
+    unsigned char *buf;
+    unsigned long len; //ÈïøÂ∫¶
+    faacEncGetDecoderSpecificInfo(audio_encode_handle, &buf, &len);
+    int body_size = 2 + len;
+    RTMPPacket *packet = malloc(sizeof(RTMPPacket));
+    //RTMPPacketÂàùÂßãÂåñ
+    RTMPPacket_Alloc(packet, body_size);
+    RTMPPacket_Reset(packet);
+    char *body = packet->m_body;
+    //Â§¥‰ø°ÊÅØÈÖçÁΩÆ
+    /*AF 00 + AAC RAW data*/
+    body[0] = 0xAF;//10 5 SoundFormat(4bits):10=AAC,SoundRate(2bits):3=44kHz,SoundSize(1bit):1=16-bit samples,SoundType(1bit):1=Stereo sound
+    body[1] = 0x00;//AACPacketType:0Ë°®Á§∫AAC sequence header
+    memcpy(&body[2], buf, len); /*spec_bufÊòØAAC sequence headerÊï∞ÊçÆ*/
+    packet->m_packetType = RTMP_PACKET_TYPE_AUDIO;
+    packet->m_nBodySize = body_size;
+    packet->m_nChannel = 0x04;
+    packet->m_hasAbsTimestamp = 0;
+    packet->m_nTimeStamp = 0;
+    packet->m_headerType = RTMP_PACKET_SIZE_MEDIUM;
+    add_rtmp_packet(packet);
+    free(buf);
 }
 
 /**
- * ÃÌº”AAC rtmp packet
+ * Ê∑ªÂä†AAC rtmp packet
  */
-void add_aac_body(unsigned char *buf, int len){
-	int body_size = 2 + len;
-	RTMPPacket *packet = malloc(sizeof(RTMPPacket));
-	//RTMPPacket≥ı ºªØ
-	RTMPPacket_Alloc(packet,body_size);
-	RTMPPacket_Reset(packet);
-	unsigned char * body = packet->m_body;
-	//Õ∑–≈œ¢≈‰÷√
-	/*AF 00 + AAC RAW data*/
-	body[0] = 0xAF;//10 5 SoundFormat(4bits):10=AAC,SoundRate(2bits):3=44kHz,SoundSize(1bit):1=16-bit samples,SoundType(1bit):1=Stereo sound
-	body[1] = 0x01;//AACPacketType:1±Ì æAAC raw
-	memcpy(&body[2], buf, len); /*spec_buf «AAC raw ˝æ›*/
-	packet->m_packetType = RTMP_PACKET_TYPE_AUDIO;
-	packet->m_nBodySize = body_size;
-	packet->m_nChannel = 0x04;
-	packet->m_hasAbsTimestamp = 0;
-	packet->m_headerType = RTMP_PACKET_SIZE_LARGE;
-	packet->m_nTimeStamp = RTMP_GetTime() - start_time;
-	add_rtmp_packet(packet);
+void add_aac_body(unsigned char *buf, int len) {
+    int body_size = 2 + len;
+    RTMPPacket *packet = malloc(sizeof(RTMPPacket));
+    //RTMPPacketÂàùÂßãÂåñ
+    RTMPPacket_Alloc(packet, body_size);
+    RTMPPacket_Reset(packet);
+    char *body = packet->m_body;
+    //Â§¥‰ø°ÊÅØÈÖçÁΩÆ
+    /*AF 00 + AAC RAW data*/
+    body[0] = 0xAF;//10 5 SoundFormat(4bits):10=AAC,SoundRate(2bits):3=44kHz,SoundSize(1bit):1=16-bit samples,SoundType(1bit):1=Stereo sound
+    body[1] = 0x01;//AACPacketType:1Ë°®Á§∫AAC raw
+    memcpy(&body[2], buf, len); /*spec_bufÊòØAAC rawÊï∞ÊçÆ*/
+    packet->m_packetType = RTMP_PACKET_TYPE_AUDIO;
+    packet->m_nBodySize = body_size;
+    packet->m_nChannel = 0x04;
+    packet->m_hasAbsTimestamp = 0;
+    packet->m_headerType = RTMP_PACKET_SIZE_LARGE;
+    packet->m_nTimeStamp = RTMP_GetTime() - start_time;
+    add_rtmp_packet(packet);
 }
 
-//ªÒ»°JavaVM
-jint JNI_OnLoad(JavaVM* vm, void* reserved){
-	javaVM = vm;
-	return JNI_VERSION_1_4;
-}
-
-/**
- * œÚJava≤„∑¢ÀÕ¥ÌŒÛ–≈œ¢
- */
-void throwNativeError(JNIEnv *env,int code){
-	(*env)->CallVoidMethod(env,jobj_push_native,jmid_throw_native_error,code);
+//Ëé∑ÂèñJavaVM
+jint JNI_OnLoad(JavaVM *vm, void *reserved) {
+    javaVM = vm;
+    return JNI_VERSION_1_4;
 }
 
 /**
- * ¥”∂”¡–÷–≤ª∂œ¿≠»°RTMPPacket∑¢ÀÕ∏¯¡˜√ΩÃÂ∑˛ŒÒ∆˜£©
+ * ÂêëJavaÂ±ÇÂèëÈÄÅÈîôËØØ‰ø°ÊÅØ
  */
-void *push_thread(void * arg){
-	JNIEnv* env;//ªÒ»°µ±«∞œﬂ≥ÃJNIEnv
-	(*javaVM)->AttachCurrentThread(javaVM,&env,NULL);
+void throwNativeError(JNIEnv *env, int code) {
+    (*env)->CallVoidMethod(env, jobj_push_native, jmid_throw_native_error, code);
+}
 
-	//Ω®¡¢RTMP¡¨Ω”
-	RTMP *rtmp = RTMP_Alloc();
-	if(!rtmp){
-		LOGE("rtmp≥ı ºªØ ß∞‹");
-		goto end;
-	}
-	RTMP_Init(rtmp);
-	rtmp->Link.timeout = 5; //¡¨Ω”≥¨ ±µƒ ±º‰
-	//…Ë÷√¡˜√ΩÃÂµÿ÷∑
-	RTMP_SetupURL(rtmp,rtmp_path);
-	//∑¢≤ºrtmp ˝æ›¡˜
-	RTMP_EnableWrite(rtmp);
-	//Ω®¡¢¡¨Ω”
-	if(!RTMP_Connect(rtmp,NULL)){
-		LOGE("%s","RTMP ¡¨Ω” ß∞‹");
-		throwNativeError(env,CONNECT_FAILED);
-		goto end;
-	}
-	//º∆ ±
-	start_time = RTMP_GetTime();
-	if(!RTMP_ConnectStream(rtmp,0)){ //¡¨Ω”¡˜
-		LOGE("%s","RTMP ConnectStream failed");
-		throwNativeError(env,CONNECT_FAILED);
-		goto end;
-	}
-	is_pushing = TRUE;
-	//∑¢ÀÕAACÕ∑–≈œ¢
-	add_aac_sequence_header();
+/**
+ * ‰ªéÈòüÂàó‰∏≠‰∏çÊñ≠ÊãâÂèñRTMPPacketÂèëÈÄÅÁªôÊµÅÂ™í‰ΩìÊúçÂä°Âô®Ôºâ
+ */
+void *push_thread() {
+    JNIEnv *env;//Ëé∑ÂèñÂΩìÂâçÁ∫øÁ®ãJNIEnv
+    (*javaVM)->AttachCurrentThread(javaVM, &env, NULL);
 
-	while(is_pushing){
-		//∑¢ÀÕ
-		pthread_mutex_lock(&mutex);
-		pthread_cond_wait(&cond,&mutex);
-		//»°≥ˆ∂”¡–÷–µƒRTMPPacket
-		RTMPPacket *packet = queue_get_first();
-		if(packet){
-			queue_delete_first(); //“∆≥˝
-			packet->m_nInfoField2 = rtmp->m_stream_id; //RTMP–≠“È£¨stream_id ˝æ›
-			int i = RTMP_SendPacket(rtmp,packet,TRUE); //TRUE∑≈»Îlibrtmp∂”¡–÷–£¨≤¢≤ª «¡¢º¥∑¢ÀÕ
-			if(!i){
-				LOGE("RTMP ∂œø™");
-				RTMPPacket_Free(packet);
-				pthread_mutex_unlock(&mutex);
-				goto end;
-			}else{
-				LOGI("%s","rtmp send packet");
-			}
-			RTMPPacket_Free(packet);
-		}
+    //Âª∫Á´ãRTMPËøûÊé•
+    RTMP *rtmp = RTMP_Alloc();
+    if (!rtmp) {
+        LOGE("rtmpÂàùÂßãÂåñÂ§±Ë¥•");
+        goto end;
+    }
+    RTMP_Init(rtmp);
+    rtmp->Link.timeout = 5; //ËøûÊé•Ë∂ÖÊó∂ÁöÑÊó∂Èó¥
+    //ËÆæÁΩÆÊµÅÂ™í‰ΩìÂú∞ÂùÄ
+    RTMP_SetupURL(rtmp, rtmp_path);
+    //ÂèëÂ∏ÉrtmpÊï∞ÊçÆÊµÅ
+    RTMP_EnableWrite(rtmp);
+    //Âª∫Á´ãËøûÊé•
+    if (!RTMP_Connect(rtmp, NULL)) {
+        LOGE("%s", "RTMP ËøûÊé•Â§±Ë¥•");
+        throwNativeError(env, CONNECT_FAILED);
+        goto end;
+    }
+    //ËÆ°Êó∂
+    start_time = RTMP_GetTime();
+    if (!RTMP_ConnectStream(rtmp, 0)) { //ËøûÊé•ÊµÅ
+        LOGE("%s", "RTMP ConnectStream failed");
+        throwNativeError(env, CONNECT_FAILED);
+        goto end;
+    }
+    is_pushing = TRUE;
+    //ÂèëÈÄÅAACÂ§¥‰ø°ÊÅØ
+    add_aac_sequence_header();
 
-		pthread_mutex_unlock(&mutex);
-	}
-end:
-	LOGI("%s"," Õ∑≈◊ ‘¥");
-	free(rtmp_path);
-	RTMP_Close(rtmp);
-	RTMP_Free(rtmp);
-	(*javaVM)->DetachCurrentThread(javaVM);
-	return 0;
+    while (is_pushing) {
+        //ÂèëÈÄÅ
+        pthread_mutex_lock(&mutex);
+        pthread_cond_wait(&cond, &mutex);
+        //ÂèñÂá∫ÈòüÂàó‰∏≠ÁöÑRTMPPacket
+        RTMPPacket *packet = queue_get_first();
+        if (packet) {
+            queue_delete_first(); //ÁßªÈô§
+            packet->m_nInfoField2 = rtmp->m_stream_id; //RTMPÂçèËÆÆÔºåstream_idÊï∞ÊçÆ
+            int i = RTMP_SendPacket(rtmp, packet, TRUE); //TRUEÊîæÂÖ•librtmpÈòüÂàó‰∏≠ÔºåÂπ∂‰∏çÊòØÁ´ãÂç≥ÂèëÈÄÅ
+            if (!i) {
+                LOGE("RTMP Êñ≠ÂºÄ");
+                RTMPPacket_Free(packet);
+                pthread_mutex_unlock(&mutex);
+                goto end;
+            } else {
+                LOGI("%s", "rtmp send packet");
+            }
+            RTMPPacket_Free(packet);
+        }
+
+        pthread_mutex_unlock(&mutex);
+    }
+    end:
+    LOGI("%s", "ÈáäÊîæËµÑÊ∫ê");
+    free(rtmp_path);
+    RTMP_Close(rtmp);
+    RTMP_Free(rtmp);
+    (*javaVM)->DetachCurrentThread(javaVM);
+    return 0;
 }
 
 JNIEXPORT void JNICALL Java_com_dongnaoedu_live_jni_PushNative_startPush
-  (JNIEnv *env, jobject jobj, jstring url_jstr){
-	//jobj(PushNative∂‘œÛ)
-	jobj_push_native = (*env)->NewGlobalRef(env,jobj);
+        (JNIEnv *env, jobject jobj, jstring url_jstr) {
+    //jobj(PushNativeÂØπË±°)
+    jobj_push_native = (*env)->NewGlobalRef(env, jobj);
 
-	jclass jcls_push_native_tmp = (*env)->GetObjectClass(env,jobj);
-	jcls_push_native = (*env)->NewGlobalRef(env,jcls_push_native_tmp);
-	if(jcls_push_native_tmp == NULL){
-		LOGI("%s","NULL");
-	}else{
-		LOGI("%s","not NULL");
-	}
-	//PushNative.throwNativeError
-	jmid_throw_native_error = (*env)->GetMethodID(env,jcls_push_native_tmp,"throwNativeError","(I)V");
+    jclass jcls_push_native_tmp = (*env)->GetObjectClass(env, jobj);
+    jcls_push_native = (*env)->NewGlobalRef(env, jcls_push_native_tmp);
+    //PushNative.throwNativeError
+    jmid_throw_native_error = (*env)->GetMethodID(env, jcls_push_native_tmp, "throwNativeError",
+                                                  "(I)V");
 
-	//≥ı ºªØµƒ≤Ÿ◊˜
-	const char* url_cstr = (*env)->GetStringUTFChars(env,url_jstr,NULL);
-	//∏¥÷∆url_cstrƒ⁄»›µΩrtmp_path
-	rtmp_path = malloc(strlen(url_cstr) + 1);
-	memset(rtmp_path,0,strlen(url_cstr) + 1);
-	memcpy(rtmp_path,url_cstr,strlen(url_cstr));
+    //ÂàùÂßãÂåñÁöÑÊìç‰Ωú
+    const char *url_cstr = (*env)->GetStringUTFChars(env, url_jstr, NULL);
+    //Â§çÂà∂url_cstrÂÜÖÂÆπÂà∞rtmp_path
+    rtmp_path = malloc(strlen(url_cstr) + 1);
+    memset(rtmp_path, 0, strlen(url_cstr) + 1);
+    memcpy(rtmp_path, url_cstr, strlen(url_cstr));
 
-	//≥ı ºªØª•≥‚À¯”ÎÃıº˛±‰¡ø
-	pthread_mutex_init(&mutex,NULL);
-	pthread_cond_init(&cond,NULL);
+    //ÂàùÂßãÂåñ‰∫íÊñ•ÈîÅ‰∏éÊù°‰ª∂ÂèòÈáè
+    pthread_mutex_init(&mutex, NULL);
+    pthread_cond_init(&cond, NULL);
 
-	//¥¥Ω®∂”¡–
-	create_queue();
-	//∆Ù∂Øœ˚∑—’ﬂœﬂ≥Ã£®¥”∂”¡–÷–≤ª∂œ¿≠»°RTMPPacket∑¢ÀÕ∏¯¡˜√ΩÃÂ∑˛ŒÒ∆˜£©
-	pthread_t push_thread_id;
-	pthread_create(&push_thread_id, NULL,push_thread, NULL);
+    //ÂàõÂª∫ÈòüÂàó
+    create_queue();
+    //ÂêØÂä®Ê∂àË¥πËÄÖÁ∫øÁ®ãÔºà‰ªéÈòüÂàó‰∏≠‰∏çÊñ≠ÊãâÂèñRTMPPacketÂèëÈÄÅÁªôÊµÅÂ™í‰ΩìÊúçÂä°Âô®Ôºâ
+    pthread_t push_thread_id;
+    pthread_create(&push_thread_id, NULL, push_thread, NULL);
 
-	(*env)->ReleaseStringUTFChars(env,url_jstr,url_cstr);
+    (*env)->ReleaseStringUTFChars(env, url_jstr, url_cstr);
 }
 
 
 JNIEXPORT void JNICALL Java_com_dongnaoedu_live_jni_PushNative_stopPush
-  (JNIEnv *env, jobject jobj){
-	is_pushing = FALSE;
+        (JNIEnv *env, jobject jobj) {
+    is_pushing = FALSE;
 }
 
 
 JNIEXPORT void JNICALL Java_com_dongnaoedu_live_jni_PushNative_release
-  (JNIEnv *env, jobject jobj){
-	(*env)->DeleteGlobalRef(env,jcls_push_native);
-	(*env)->DeleteGlobalRef(env,jobj_push_native);
-	(*env)->DeleteGlobalRef(env,jmid_throw_native_error);
+        (JNIEnv *env, jobject jobj) {
+    (*env)->DeleteGlobalRef(env, jcls_push_native);
+    (*env)->DeleteGlobalRef(env, jobj_push_native);
+    (*env)->DeleteGlobalRef(env, jmid_throw_native_error);
 }
 
 /**
- * …Ë÷√ ”∆µ≤Œ ˝
+ * ËÆæÁΩÆËßÜÈ¢ëÂèÇÊï∞
  */
 JNIEXPORT void JNICALL Java_com_dongnaoedu_live_jni_PushNative_setVideoOptions
-  (JNIEnv *env, jobject jobj, jint width, jint height, jint bitrate, jint fps){
-	x264_param_t param;
-	//x264_param_default_preset …Ë÷√
-	x264_param_default_preset(&param,"ultrafast","zerolatency");
-	//±‡¬Î ‰»ÎµƒœÒÀÿ∏Ò ΩYUV420P
-	param.i_csp = X264_CSP_I420;
-	param.i_width  = width;
-	param.i_height = height;
+        (JNIEnv *env, jobject jobj, jint width, jint height, jint bitrate, jint fps) {
+    x264_param_t param;
+    //x264_param_default_preset ËÆæÁΩÆ
+    x264_param_default_preset(&param, "ultrafast", "zerolatency");
+    //ÁºñÁ†ÅËæìÂÖ•ÁöÑÂÉèÁ¥†Ê†ºÂºèYUV420P
+    param.i_csp = X264_CSP_I420;
+    param.i_width = width;
+    param.i_height = height;
 
-	y_len = width * height;
-	u_len = y_len / 4;
-	v_len = u_len;
+    y_len = width * height;
+    u_len = y_len / 4;
+    v_len = u_len;
 
-	//≤Œ ˝i_rc_method±Ì æ¬Î¬ øÿ÷∆£¨CQP(∫„∂®÷ ¡ø)£¨CRF(∫„∂®¬Î¬ )£¨ABR(∆Ωæ˘¬Î¬ )
-	//∫„∂®¬Î¬ £¨ª·æ°¡øøÿ÷∆‘⁄πÃ∂®¬Î¬ 
-	param.rc.i_rc_method = X264_RC_CRF;
-	param.rc.i_bitrate = bitrate / 1000; //* ¬Î¬ (±»Ãÿ¬ ,µ•ŒªKbps)
-	param.rc.i_vbv_max_bitrate = bitrate / 1000 * 1.2; //À≤ ±◊Ó¥Û¬Î¬ 
+    //ÂèÇÊï∞i_rc_methodË°®Á§∫Á†ÅÁéáÊéßÂà∂ÔºåCQP(ÊÅíÂÆöË¥®Èáè)ÔºåCRF(ÊÅíÂÆöÁ†ÅÁéá)ÔºåABR(Âπ≥ÂùáÁ†ÅÁéá)
+    //ÊÅíÂÆöÁ†ÅÁéáÔºå‰ºöÂ∞ΩÈáèÊéßÂà∂Âú®Âõ∫ÂÆöÁ†ÅÁéá
+    param.rc.i_rc_method = X264_RC_CRF;
+    param.rc.i_bitrate = bitrate / 1000; //* Á†ÅÁéá(ÊØîÁâπÁéá,Âçï‰ΩçKbps)
+    param.rc.i_vbv_max_bitrate = bitrate / 1000 * 1.2; //Áû¨Êó∂ÊúÄÂ§ßÁ†ÅÁéá
 
-	//¬Î¬ øÿ÷∆≤ªÕ®π˝timebase∫Õtimestamp£¨∂¯ «fps
-	param.b_vfr_input = 0;
-	param.i_fps_num = fps; //* ÷°¬ ∑÷◊”
-	param.i_fps_den = 1; //* ÷°¬ ∑÷ƒ∏
-	param.i_timebase_den = param.i_fps_num;
-	param.i_timebase_num = param.i_fps_den;
-	param.i_threads = 1;//≤¢––±‡¬Îœﬂ≥Ã ˝¡ø£¨0ƒ¨»œŒ™∂‡œﬂ≥Ã
+    //Á†ÅÁéáÊéßÂà∂‰∏çÈÄöËøátimebaseÂíåtimestampÔºåËÄåÊòØfps
+    param.b_vfr_input = 0;
+    param.i_fps_num = fps; //* Â∏ßÁéáÂàÜÂ≠ê
+    param.i_fps_den = 1; //* Â∏ßÁéáÂàÜÊØç
+    param.i_timebase_den = param.i_fps_num;
+    param.i_timebase_num = param.i_fps_den;
+    param.i_threads = 1;//Âπ∂Ë°åÁºñÁ†ÅÁ∫øÁ®ãÊï∞ÈáèÔºå0ÈªòËÆ§‰∏∫Â§öÁ∫øÁ®ã
 
-	// «∑Ò∞—SPS∫ÕPPS∑≈»Î√ø“ª∏ˆπÿº¸÷°
-	//SPS Sequence Parameter Set –Ú¡–≤Œ ˝ºØ£¨PPS Picture Parameter Set ÕºœÒ≤Œ ˝ºØ
-	//Œ™¡ÀÃ·∏ﬂÕºœÒµƒæ¿¥Ìƒ‹¡¶
-	param.b_repeat_headers = 1;
-	//…Ë÷√Levelº∂±
-	param.i_level_idc = 51;
-	//…Ë÷√Profileµµ¥Œ
-	//baselineº∂±£¨√ª”–B÷°
-	x264_param_apply_profile(&param,"baseline");
+    //ÊòØÂê¶ÊääSPSÂíåPPSÊîæÂÖ•ÊØè‰∏Ä‰∏™ÂÖ≥ÈîÆÂ∏ß
+    //SPS Sequence Parameter Set Â∫èÂàóÂèÇÊï∞ÈõÜÔºåPPS Picture Parameter Set ÂõæÂÉèÂèÇÊï∞ÈõÜ
+    //‰∏∫‰∫ÜÊèêÈ´òÂõæÂÉèÁöÑÁ∫†ÈîôËÉΩÂäõ
+    param.b_repeat_headers = 1;
+    //ËÆæÁΩÆLevelÁ∫ßÂà´
+    param.i_level_idc = 51;
+    //ËÆæÁΩÆProfileÊ°£Ê¨°
+    //baselineÁ∫ßÂà´ÔºåÊ≤°ÊúâBÂ∏ß
+    x264_param_apply_profile(&param, "baseline");
 
-	//x264_picture_t£® ‰»ÎÕºœÒ£©≥ı ºªØ
-	x264_picture_alloc(&pic_in, param.i_csp, param.i_width, param.i_height);
-	pic_in.i_pts = 0;
-	//¥Úø™±‡¬Î∆˜
-	video_encode_handle = x264_encoder_open(&param);
-	if(video_encode_handle){
-		LOGI("¥Úø™ ”∆µ±‡¬Î∆˜≥…π¶");
-	}else{
-		throwNativeError(env,INIT_FAILED);
-	}
+    //x264_picture_tÔºàËæìÂÖ•ÂõæÂÉèÔºâÂàùÂßãÂåñ
+    x264_picture_alloc(&pic_in, param.i_csp, param.i_width, param.i_height);
+    pic_in.i_pts = 0;
+    //ÊâìÂºÄÁºñÁ†ÅÂô®
+    video_encode_handle = x264_encoder_open(&param);
+    if (video_encode_handle) {
+        LOGI("ÊâìÂºÄËßÜÈ¢ëÁºñÁ†ÅÂô®ÊàêÂäü");
+    } else {
+        throwNativeError(env, INIT_FAILED);
+    }
 }
 
 /**
- * “Ù∆µ±‡¬Î∆˜≈‰÷√
+ * Èü≥È¢ëÁºñÁ†ÅÂô®ÈÖçÁΩÆ
  */
 JNIEXPORT void JNICALL Java_com_dongnaoedu_live_jni_PushNative_setAudioOptions
-  (JNIEnv *env, jobject jobj, jint sampleRateInHz, jint numChannels){
-	audio_encode_handle = faacEncOpen(sampleRateInHz,numChannels,&nInputSamples,&nMaxOutputBytes);
-	if(!audio_encode_handle){
-		LOGE("“Ù∆µ±‡¬Î∆˜¥Úø™ ß∞‹");
-		return;
-	}
-	//…Ë÷√“Ù∆µ±‡¬Î≤Œ ˝
-	faacEncConfigurationPtr p_config = faacEncGetCurrentConfiguration(audio_encode_handle);
-	p_config->mpegVersion = MPEG4;
-	p_config->allowMidside = 1;
-	p_config->aacObjectType = LOW;
-	p_config->outputFormat = 0; // ‰≥ˆ «∑Ò∞¸∫¨ADTSÕ∑
-	p_config->useTns = 1; // ±”Ú‘Î“Ùøÿ÷∆,¥Û∏≈æÕ «œ˚±¨“Ù
-	p_config->useLfe = 0;
+        (JNIEnv *env, jobject jobj, jint sampleRateInHz, jint numChannels) {
+    audio_encode_handle = faacEncOpen(sampleRateInHz, numChannels, &nInputSamples,
+                                      &nMaxOutputBytes);
+    if (!audio_encode_handle) {
+        LOGE("Èü≥È¢ëÁºñÁ†ÅÂô®ÊâìÂºÄÂ§±Ë¥•");
+        return;
+    }
+    //ËÆæÁΩÆÈü≥È¢ëÁºñÁ†ÅÂèÇÊï∞
+    faacEncConfigurationPtr p_config = faacEncGetCurrentConfiguration(audio_encode_handle);
+    p_config->mpegVersion = MPEG4;
+    p_config->allowMidside = 1;
+    p_config->aacObjectType = LOW;
+    p_config->outputFormat = 0; //ËæìÂá∫ÊòØÂê¶ÂåÖÂê´ADTSÂ§¥
+    p_config->useTns = 1; //Êó∂ÂüüÂô™Èü≥ÊéßÂà∂,Â§ßÊ¶ÇÂ∞±ÊòØÊ∂àÁàÜÈü≥
+    p_config->useLfe = 0;
 //	p_config->inputFormat = FAAC_INPUT_16BIT;
-	p_config->quantqual = 100;
-	p_config->bandWidth = 0; //∆µøÌ
-	p_config->shortctl = SHORTCTL_NORMAL;
+    p_config->quantqual = 100;
+    p_config->bandWidth = 0; //È¢ëÂÆΩ
+    p_config->shortctl = SHORTCTL_NORMAL;
 
-	if(!faacEncSetConfiguration(audio_encode_handle,p_config)){
-		LOGE("%s","“Ù∆µ±‡¬Î∆˜≈‰÷√ ß∞‹..");
-		throwNativeError(env,INIT_FAILED);
-		return;
-	}
+    if (!faacEncSetConfiguration(audio_encode_handle, p_config)) {
+        LOGE("%s", "Èü≥È¢ëÁºñÁ†ÅÂô®ÈÖçÁΩÆÂ§±Ë¥•..");
+        throwNativeError(env, INIT_FAILED);
+        return;
+    }
 
-	LOGI("%s","“Ù∆µ±‡¬Î∆˜≈‰÷√≥…π¶");
+    LOGI("%s", "Èü≥È¢ëÁºñÁ†ÅÂô®ÈÖçÁΩÆÊàêÂäü");
 }
 
 /**
- * ∑¢ÀÕh264 SPS”ÎPPS≤Œ ˝ºØ
+ * ÂèëÈÄÅh264 SPS‰∏éPPSÂèÇÊï∞ÈõÜ
  */
-void add_264_sequence_header(unsigned char* pps,unsigned char* sps,int pps_len,int sps_len){
-	int body_size = 16 + sps_len + pps_len; //∞¥’’H264±Í◊º≈‰÷√SPS∫ÕPPS£¨π≤ π”√¡À16◊÷Ω⁄
-	RTMPPacket *packet = malloc(sizeof(RTMPPacket));
-	//RTMPPacket≥ı ºªØ
-	RTMPPacket_Alloc(packet,body_size);
-	RTMPPacket_Reset(packet);
+void add_264_sequence_header(unsigned char *pps, unsigned char *sps, int pps_len, int sps_len) {
+    int body_size = 16 + sps_len + pps_len; //ÊåâÁÖßH264Ê†áÂáÜÈÖçÁΩÆSPSÂíåPPSÔºåÂÖ±‰ΩøÁî®‰∫Ü16Â≠óËäÇ
+    RTMPPacket *packet = malloc(sizeof(RTMPPacket));
+    //RTMPPacketÂàùÂßãÂåñ
+    RTMPPacket_Alloc(packet, body_size);
+    RTMPPacket_Reset(packet);
 
-	unsigned char * body = packet->m_body;
-	int i = 0;
-	//∂˛Ω¯÷∆±Ì æ£∫00010111
-	body[i++] = 0x17;//VideoHeaderTag:FrameType(1=key frame)+CodecID(7=AVC)
-	body[i++] = 0x00;//AVCPacketType = 0±Ì æ…Ë÷√AVCDecoderConfigurationRecord
-	//composition time 0x000000 24bit ?
-	body[i++] = 0x00;
-	body[i++] = 0x00;
-	body[i++] = 0x00;
+    char *body = packet->m_body;
+    int i = 0;
+    //‰∫åËøõÂà∂Ë°®Á§∫Ôºö00010111
+    body[i++] = 0x17;//VideoHeaderTag:FrameType(1=key frame)+CodecID(7=AVC)
+    body[i++] = 0x00;//AVCPacketType = 0Ë°®Á§∫ËÆæÁΩÆAVCDecoderConfigurationRecord
+    //composition time 0x000000 24bit ?
+    body[i++] = 0x00;
+    body[i++] = 0x00;
+    body[i++] = 0x00;
 
-	/*AVCDecoderConfigurationRecord*/
-	body[i++] = 0x01;//configurationVersion£¨∞Ê±æŒ™1
-	body[i++] = sps[1];//AVCProfileIndication
-	body[i++] = sps[2];//profile_compatibility
-	body[i++] = sps[3];//AVCLevelIndication
-	//?
-	body[i++] = 0xFF;//lengthSizeMinusOne,H264  ”∆µ÷– NALUµƒ≥§∂»£¨º∆À„∑Ω∑® « 1 + (lengthSizeMinusOne & 3), µº ≤‚ ‘ ±∑¢œ÷◊‹Œ™FF£¨º∆À„Ω·π˚Œ™4.
+    /*AVCDecoderConfigurationRecord*/
+    body[i++] = 0x01;//configurationVersionÔºåÁâàÊú¨‰∏∫1
+    body[i++] = sps[1];//AVCProfileIndication
+    body[i++] = sps[2];//profile_compatibility
+    body[i++] = sps[3];//AVCLevelIndication
+    //?
+    body[i++] = 0xFF;//lengthSizeMinusOne,H264 ËßÜÈ¢ë‰∏≠ NALUÁöÑÈïøÂ∫¶ÔºåËÆ°ÁÆóÊñπÊ≥ïÊòØ 1 + (lengthSizeMinusOne & 3),ÂÆûÈôÖÊµãËØïÊó∂ÂèëÁé∞ÊÄª‰∏∫FFÔºåËÆ°ÁÆóÁªìÊûú‰∏∫4.
 
-	/*sps*/
-	body[i++] = 0xE1;//numOfSequenceParameterSets:SPSµƒ∏ˆ ˝£¨º∆À„∑Ω∑® « numOfSequenceParameterSets & 0x1F, µº ≤‚ ‘ ±∑¢œ÷◊‹Œ™E1£¨º∆À„Ω·π˚Œ™1.
-	body[i++] = (sps_len >> 8) & 0xff;//sequenceParameterSetLength:SPSµƒ≥§∂»
-	body[i++] = sps_len & 0xff;//sequenceParameterSetNALUnits
-	memcpy(&body[i], sps, sps_len);
-	i += sps_len;
+    /*sps*/
+    body[i++] = 0xE1;//numOfSequenceParameterSets:SPSÁöÑ‰∏™Êï∞ÔºåËÆ°ÁÆóÊñπÊ≥ïÊòØ numOfSequenceParameterSets & 0x1F,ÂÆûÈôÖÊµãËØïÊó∂ÂèëÁé∞ÊÄª‰∏∫E1ÔºåËÆ°ÁÆóÁªìÊûú‰∏∫1.
+    body[i++] = (sps_len >> 8) & 0xff;//sequenceParameterSetLength:SPSÁöÑÈïøÂ∫¶
+    body[i++] = sps_len & 0xff;//sequenceParameterSetNALUnits
+    memcpy(&body[i], sps, sps_len);
+    i += sps_len;
 
-	/*pps*/
-	body[i++] = 0x01;//numOfPictureParameterSets:PPS µƒ∏ˆ ˝,º∆À„∑Ω∑® « numOfPictureParameterSets & 0x1F, µº ≤‚ ‘ ±∑¢œ÷◊‹Œ™E1£¨º∆À„Ω·π˚Œ™1.
-	body[i++] = (pps_len >> 8) & 0xff;//pictureParameterSetLength:PPSµƒ≥§∂»
-	body[i++] = (pps_len) & 0xff;//PPS
-	memcpy(&body[i], pps, pps_len);
-	i += pps_len;
+    /*pps*/
+    body[i++] = 0x01;//numOfPictureParameterSets:PPS ÁöÑ‰∏™Êï∞,ËÆ°ÁÆóÊñπÊ≥ïÊòØ numOfPictureParameterSets & 0x1F,ÂÆûÈôÖÊµãËØïÊó∂ÂèëÁé∞ÊÄª‰∏∫E1ÔºåËÆ°ÁÆóÁªìÊûú‰∏∫1.
+    body[i++] = (pps_len >> 8) & 0xff;//pictureParameterSetLength:PPSÁöÑÈïøÂ∫¶
+    body[i++] = (pps_len) & 0xff;//PPS
+    memcpy(&body[i], pps, pps_len);
 
-	//Message Type£¨RTMP_PACKET_TYPE_VIDEO£∫0x09
-	packet->m_packetType = RTMP_PACKET_TYPE_VIDEO;
-	//Payload Length
-	packet->m_nBodySize = body_size;
-	//Time Stamp£∫4◊÷Ω⁄
-	//º«¬º¡À√ø“ª∏ˆtagœ‡∂‘”⁄µ⁄“ª∏ˆtag£®File Header£©µƒœ‡∂‘ ±º‰°£
-	//“‘∫¡√ÎŒ™µ•Œª°£∂¯File Headerµƒtime stamp”¿‘∂Œ™0°£
-	packet->m_nTimeStamp = 0;
-	packet->m_hasAbsTimestamp = 0;
-	packet->m_nChannel = 0x04; //Channel ID£¨Audio∫ÕVidioÕ®µ¿
-	packet->m_headerType = RTMP_PACKET_SIZE_MEDIUM; //?
-	//Ω´RTMPPacketº”»Î∂”¡–
-	add_rtmp_packet(packet);
-
+    //Message TypeÔºåRTMP_PACKET_TYPE_VIDEOÔºö0x09
+    packet->m_packetType = RTMP_PACKET_TYPE_VIDEO;
+    //Payload Length
+    packet->m_nBodySize = body_size;
+    //Time StampÔºö4Â≠óËäÇ
+    //ËÆ∞ÂΩï‰∫ÜÊØè‰∏Ä‰∏™tagÁõ∏ÂØπ‰∫éÁ¨¨‰∏Ä‰∏™tagÔºàFile HeaderÔºâÁöÑÁõ∏ÂØπÊó∂Èó¥„ÄÇ
+    //‰ª•ÊØ´Áßí‰∏∫Âçï‰Ωç„ÄÇËÄåFile HeaderÁöÑtime stampÊ∞∏Ëøú‰∏∫0„ÄÇ
+    packet->m_nTimeStamp = 0;
+    packet->m_hasAbsTimestamp = 0;
+    packet->m_nChannel = 0x04; //Channel IDÔºåAudioÂíåVidioÈÄöÈÅì
+    packet->m_headerType = RTMP_PACKET_SIZE_MEDIUM; //?
+    //Â∞ÜRTMPPacketÂä†ÂÖ•ÈòüÂàó
+    add_rtmp_packet(packet);
 }
 
 /**
- * ∑¢ÀÕh264÷°–≈œ¢
+ * ÂèëÈÄÅh264Â∏ß‰ø°ÊÅØ
  */
-void add_264_body(unsigned char *buf ,int len){
-	//»•µÙ∆ º¬Î(ΩÁ∂®∑˚)
-	if(buf[2] == 0x00){  //00 00 00 01
-		buf += 4;
-		len -= 4;
-	}else if(buf[2] == 0x01){ // 00 00 01
-		buf += 3;
-		len -= 3;
-	}
-	int body_size = len + 9;
-	RTMPPacket *packet = malloc(sizeof(RTMPPacket));
-	RTMPPacket_Alloc(packet,body_size);
+void add_264_body(unsigned char *buf, int len) {
+    //ÂéªÊéâËµ∑ÂßãÁ†Å(ÁïåÂÆöÁ¨¶)
+    if (buf[2] == 0x00) {  //00 00 00 01
+        buf += 4;
+        len -= 4;
+    } else if (buf[2] == 0x01) { // 00 00 01
+        buf += 3;
+        len -= 3;
+    }
+    int body_size = len + 9;
+    RTMPPacket *packet = malloc(sizeof(RTMPPacket));
+    RTMPPacket_Alloc(packet, body_size);
 
-	unsigned char * body = packet->m_body;
-	//µ±NALÕ∑–≈œ¢÷–£¨type£®5Œª£©µ»”⁄5£¨Àµ√˜’‚ «πÿº¸÷°NALµ•‘™
-	//buf[0] NAL Header”Î‘ÀÀ„£¨ªÒ»°type£¨∏˘æ›type≈–∂œπÿº¸÷°∫Õ∆’Õ®÷°
-	//00000101 & 00011111(0x1f) = 00000101
-	int type = buf[0] & 0x1f;
-	//Inter Frame ÷°º‰—πÀı
-	body[0] = 0x27;//VideoHeaderTag:FrameType(2=Inter Frame)+CodecID(7=AVC)
-	//IDR I÷°ÕºœÒ
-	if (type == NAL_SLICE_IDR) {
-		body[0] = 0x17;//VideoHeaderTag:FrameType(1=key frame)+CodecID(7=AVC)
-	}
-	//AVCPacketType = 1
-	body[1] = 0x01; /*nal unit,NALUs£®AVCPacketType == 1)*/
-	body[2] = 0x00; //composition time 0x000000 24bit
-	body[3] = 0x00;
-	body[4] = 0x00;
+    char *body = packet->m_body;
+    //ÂΩìNALÂ§¥‰ø°ÊÅØ‰∏≠ÔºåtypeÔºà5‰ΩçÔºâÁ≠â‰∫é5ÔºåËØ¥ÊòéËøôÊòØÂÖ≥ÈîÆÂ∏ßNALÂçïÂÖÉ
+    //buf[0] NAL Header‰∏éËøêÁÆóÔºåËé∑ÂèñtypeÔºåÊ†πÊçÆtypeÂà§Êñ≠ÂÖ≥ÈîÆÂ∏ßÂíåÊôÆÈÄöÂ∏ß
+    //00000101 & 00011111(0x1f) = 00000101
+    int type = buf[0] & 0x1f;
+    //Inter Frame Â∏ßÈó¥ÂéãÁº©
+    body[0] = 0x27;//VideoHeaderTag:FrameType(2=Inter Frame)+CodecID(7=AVC)
+    //IDR IÂ∏ßÂõæÂÉè
+    if (type == NAL_SLICE_IDR) {
+        body[0] = 0x17;//VideoHeaderTag:FrameType(1=key frame)+CodecID(7=AVC)
+    }
+    //AVCPacketType = 1
+    body[1] = 0x01; /*nal unit,NALUsÔºàAVCPacketType == 1)*/
+    body[2] = 0x00; //composition time 0x000000 24bit
+    body[3] = 0x00;
+    body[4] = 0x00;
 
-	//–¥»ÎNALU–≈œ¢£¨”““∆8Œª£¨“ª∏ˆ◊÷Ω⁄µƒ∂¡»°£ø
-	body[5] = (len >> 24) & 0xff;
-	body[6] = (len >> 16) & 0xff;
-	body[7] = (len >> 8) & 0xff;
-	body[8] = (len) & 0xff;
+    //ÂÜôÂÖ•NALU‰ø°ÊÅØÔºåÂè≥Áßª8‰ΩçÔºå‰∏Ä‰∏™Â≠óËäÇÁöÑËØªÂèñÔºü
+    body[5] = (len >> 24) & 0xff;
+    body[6] = (len >> 16) & 0xff;
+    body[7] = (len >> 8) & 0xff;
+    body[8] = (len) & 0xff;
 
-	/*copy data*/
-	memcpy(&body[9], buf, len);
+    /*copy data*/
+    memcpy(&body[9], buf, len);
 
-	packet->m_hasAbsTimestamp = 0;
-	packet->m_nBodySize = body_size;
-	packet->m_packetType = RTMP_PACKET_TYPE_VIDEO;//µ±«∞packetµƒ¿‡–Õ£∫Video
-	packet->m_nChannel = 0x04;
-	packet->m_headerType = RTMP_PACKET_SIZE_LARGE;
+    packet->m_hasAbsTimestamp = 0;
+    packet->m_nBodySize = body_size;
+    packet->m_packetType = RTMP_PACKET_TYPE_VIDEO;//ÂΩìÂâçpacketÁöÑÁ±ªÂûãÔºöVideo
+    packet->m_nChannel = 0x04;
+    packet->m_headerType = RTMP_PACKET_SIZE_LARGE;
 //	packet->m_nTimeStamp = -1;
-	packet->m_nTimeStamp = RTMP_GetTime() - start_time;//º«¬º¡À√ø“ª∏ˆtagœ‡∂‘”⁄µ⁄“ª∏ˆtag£®File Header£©µƒœ‡∂‘ ±º‰
-	add_rtmp_packet(packet);
+    packet->m_nTimeStamp = RTMP_GetTime() - start_time;//ËÆ∞ÂΩï‰∫ÜÊØè‰∏Ä‰∏™tagÁõ∏ÂØπ‰∫éÁ¨¨‰∏Ä‰∏™tagÔºàFile HeaderÔºâÁöÑÁõ∏ÂØπÊó∂Èó¥
+    add_rtmp_packet(packet);
 
 }
 
 
 /**
- * Ω´≤…ºØµΩ ”∆µ ˝æ›Ω¯––±‡¬Î
+ * Â∞ÜÈááÈõÜÂà∞ËßÜÈ¢ëÊï∞ÊçÆËøõË°åÁºñÁ†Å
  */
 JNIEXPORT void JNICALL Java_com_dongnaoedu_live_jni_PushNative_fireVideo
-  (JNIEnv *env, jobject jobj, jbyteArray buffer){
-	// ”∆µ ˝æ›◊™Œ™YUV420P
-	//NV21->YUV420P
-	jbyte* nv21_buffer = (*env)->GetByteArrayElements(env,buffer,NULL);
-	jbyte* u = pic_in.img.plane[1];
-	jbyte* v = pic_in.img.plane[2];
-	//nv21 4:2:0 Formats, 12 Bits per Pixel
-	//nv21”Îyuv420p£¨y∏ˆ ˝“ª÷¬£¨uvŒª÷√∂‘µ˜
-	//nv21◊™yuv420p  y = w*h,u/v=w*h/4
-	//nv21 = yvu yuv420p=yuv y=y u=y+1+1 v=y+1
-	memcpy(pic_in.img.plane[0], nv21_buffer, y_len);
-	int i;
-	for (i = 0; i < u_len; i++) {
-		*(u + i) = *(nv21_buffer + y_len + i * 2 + 1);
-		*(v + i) = *(nv21_buffer + y_len + i * 2);
-	}
+        (JNIEnv *env, jobject jobj, jbyteArray buffer) {
+    //ËßÜÈ¢ëÊï∞ÊçÆËΩ¨‰∏∫YUV420P
+    //NV21->YUV420P
+    jbyte *nv21_buffer = (*env)->GetByteArrayElements(env, buffer, NULL);
+    unsigned char *u = pic_in.img.plane[1];
+    unsigned char *v = pic_in.img.plane[2];
+    //nv21 4:2:0 Formats, 12 Bits per Pixel
+    //nv21‰∏éyuv420pÔºåy‰∏™Êï∞‰∏ÄËá¥Ôºåuv‰ΩçÁΩÆÂØπË∞É
+    //nv21ËΩ¨yuv420p  y = w*h,u/v=w*h/4
+    //nv21 = yvu yuv420p=yuv y=y u=y+1+1 v=y+1
+    memcpy(pic_in.img.plane[0], nv21_buffer, y_len);
+    int i;
+    for (i = 0; i < u_len; i++) {
+        *(u + i) = *(nv21_buffer + y_len + i * 2 + 1);
+        *(v + i) = *(nv21_buffer + y_len + i * 2);
+    }
 
-	//h264±‡¬Îµ√µΩNALU ˝◊È
-	x264_nal_t *nal = NULL; //NAL
-	int n_nal = -1; //NALUµƒ∏ˆ ˝
-	//Ω¯––h264±‡¬Î
-	if(x264_encoder_encode(video_encode_handle,&nal, &n_nal,&pic_in,&pic_out) < 0){
-		LOGE("%s","±‡¬Î ß∞‹");
-		return;
-	}
-	// π”√rtmp–≠“ÈΩ´h264±‡¬Îµƒ ”∆µ ˝æ›∑¢ÀÕ∏¯¡˜√ΩÃÂ∑˛ŒÒ∆˜
-	//÷°∑÷Œ™πÿº¸÷°∫Õ∆’Õ®÷°£¨Œ™¡ÀÃ·∏ﬂª≠√Êµƒæ¿¥Ì¬ £¨πÿº¸÷°”¶∞¸∫¨SPS∫ÕPPS ˝æ›
-	int sps_len , pps_len;
-	unsigned char sps[100];
-	unsigned char pps[100];
-	memset(sps,0,100);
-	memset(pps,0,100);
-	pic_in.i_pts += 1; //À≥–Ú¿€º”
-	//±È¿˙NALU ˝◊È£¨∏˘æ›NALUµƒ¿‡–Õ≈–∂œ
-	for(i=0; i < n_nal; i++){
-		if(nal[i].i_type == NAL_SPS){
-			//∏¥÷∆SPS ˝æ›
-			sps_len = nal[i].i_payload - 4;
-			memcpy(sps,nal[i].p_payload + 4,sps_len); //≤ª∏¥÷∆Àƒ◊÷Ω⁄∆ º¬Î
-		}else if(nal[i].i_type == NAL_PPS){
-			//∏¥÷∆PPS ˝æ›
-			pps_len = nal[i].i_payload - 4;
-			memcpy(pps,nal[i].p_payload + 4,pps_len); //≤ª∏¥÷∆Àƒ◊÷Ω⁄∆ º¬Î
+    //h264ÁºñÁ†ÅÂæóÂà∞NALUÊï∞ÁªÑ
+    x264_nal_t *nal = NULL; //NAL
+    int n_nal = -1; //NALUÁöÑ‰∏™Êï∞
+    //ËøõË°åh264ÁºñÁ†Å
+    if (x264_encoder_encode(video_encode_handle, &nal, &n_nal, &pic_in, &pic_out) < 0) {
+        LOGE("%s", "ÁºñÁ†ÅÂ§±Ë¥•");
+        return;
+    }
+    //‰ΩøÁî®rtmpÂçèËÆÆÂ∞Üh264ÁºñÁ†ÅÁöÑËßÜÈ¢ëÊï∞ÊçÆÂèëÈÄÅÁªôÊµÅÂ™í‰ΩìÊúçÂä°Âô®
+    //Â∏ßÂàÜ‰∏∫ÂÖ≥ÈîÆÂ∏ßÂíåÊôÆÈÄöÂ∏ßÔºå‰∏∫‰∫ÜÊèêÈ´òÁîªÈù¢ÁöÑÁ∫†ÈîôÁéáÔºåÂÖ≥ÈîÆÂ∏ßÂ∫îÂåÖÂê´SPSÂíåPPSÊï∞ÊçÆ
+    int sps_len, pps_len;
+    unsigned char sps[100];
+    unsigned char pps[100];
+    memset(sps, 0, 100);
+    memset(pps, 0, 100);
+    pic_in.i_pts += 1; //È°∫Â∫èÁ¥ØÂä†
+    //ÈÅçÂéÜNALUÊï∞ÁªÑÔºåÊ†πÊçÆNALUÁöÑÁ±ªÂûãÂà§Êñ≠
+    for (i = 0; i < n_nal; i++) {
+        if (nal[i].i_type == NAL_SPS) {
+            //Â§çÂà∂SPSÊï∞ÊçÆ
+            sps_len = nal[i].i_payload - 4;
+            memcpy(sps, nal[i].p_payload + 4, sps_len); //‰∏çÂ§çÂà∂ÂõõÂ≠óËäÇËµ∑ÂßãÁ†Å
+        } else if (nal[i].i_type == NAL_PPS) {
+            //Â§çÂà∂PPSÊï∞ÊçÆ
+            pps_len = nal[i].i_payload - 4;
+            memcpy(pps, nal[i].p_payload + 4, pps_len); //‰∏çÂ§çÂà∂ÂõõÂ≠óËäÇËµ∑ÂßãÁ†Å
 
-			//∑¢ÀÕ–Ú¡––≈œ¢
-			//h264πÿº¸÷°ª·∞¸∫¨SPS∫ÕPPS ˝æ›
-			add_264_sequence_header(pps,sps,pps_len,sps_len);
+            //ÂèëÈÄÅÂ∫èÂàó‰ø°ÊÅØ
+            //h264ÂÖ≥ÈîÆÂ∏ß‰ºöÂåÖÂê´SPSÂíåPPSÊï∞ÊçÆ
+            add_264_sequence_header(pps, sps, pps_len, sps_len);
 
-		}else{
-			//∑¢ÀÕ÷°–≈œ¢
-			add_264_body(nal[i].p_payload,nal[i].i_payload);
-		}
+        } else {
+            //ÂèëÈÄÅÂ∏ß‰ø°ÊÅØ
+            add_264_body(nal[i].p_payload, nal[i].i_payload);
+        }
 
-	}
+    }
 
-	(*env)->ReleaseByteArrayElements(env,buffer,nv21_buffer,0);
+    (*env)->ReleaseByteArrayElements(env, buffer, nv21_buffer, 0);
 }
 
 /**
- * ∂‘“Ù∆µ≤…—˘ ˝æ›Ω¯––AAC±‡¬Î
+ * ÂØπÈü≥È¢ëÈááÊ†∑Êï∞ÊçÆËøõË°åAACÁºñÁ†Å
  */
 JNIEXPORT void JNICALL Java_com_dongnaoedu_live_jni_PushNative_fireAudio
-  (JNIEnv *env, jobject jobj, jbyteArray buffer, jint len){
-	int *pcmbuf;
-	unsigned char *bitbuf;
-	jbyte* b_buffer = (*env)->GetByteArrayElements(env, buffer, 0);
-	pcmbuf = (short*) malloc(nInputSamples * sizeof(int));
-	bitbuf = (unsigned char*) malloc(nMaxOutputBytes * sizeof(unsigned char));
-	int nByteCount = 0;
-	unsigned int nBufferSize = (unsigned int) len / 2;
-	unsigned short* buf = (unsigned short*) b_buffer;
-	while (nByteCount < nBufferSize) {
-		int audioLength = nInputSamples;
-		if ((nByteCount + nInputSamples) >= nBufferSize) {
-			audioLength = nBufferSize - nByteCount;
-		}
-		int i;
-		for (i = 0; i < audioLength; i++) {//√ø¥Œ¥” µ ±µƒpcm“Ù∆µ∂”¡–÷–∂¡≥ˆ¡øªØŒª ˝Œ™8µƒpcm ˝æ›°£
-			int s = ((int16_t *) buf + nByteCount)[i];
-			pcmbuf[i] = s << 8;//”√8∏ˆ∂˛Ω¯÷∆Œª¿¥±Ì æ“ª∏ˆ≤…—˘¡øªØµ„£®ƒ£ ˝◊™ªª£©
-		}
-		nByteCount += nInputSamples;
-		//¿˚”√FAACΩ¯––±‡¬Î£¨pcmbufŒ™◊™ªª∫Ûµƒpcm¡˜ ˝æ›£¨audioLengthŒ™µ˜”√faacEncOpen ±µ√µΩµƒ ‰»Î≤…—˘ ˝£¨bitbufŒ™±‡¬Î∫Ûµƒ ˝æ›buff£¨nMaxOutputBytesŒ™µ˜”√faacEncOpen ±µ√µΩµƒ◊Ó¥Û ‰≥ˆ◊÷Ω⁄ ˝
-		int byteslen = faacEncEncode(audio_encode_handle, pcmbuf, audioLength,
-				bitbuf, nMaxOutputBytes);
-		if (byteslen < 1) {
-			continue;
-		}
-		add_aac_body(bitbuf, byteslen);//¥”bitbuf÷–µ√µΩ±‡¬Î∫Ûµƒaac ˝æ›¡˜£¨∑≈µΩ ˝æ›∂”¡–
-	}
-	(*env)->ReleaseByteArrayElements(env, buffer, b_buffer, 0);
-	if (bitbuf)
-		free(bitbuf);
-	if (pcmbuf)
-		free(pcmbuf);
+        (JNIEnv *env, jobject jobj, jbyteArray buffer, jint len) {
+    int *pcmbuf;
+    unsigned char *bitbuf;
+    jbyte *b_buffer = (*env)->GetByteArrayElements(env, buffer, 0);
+    pcmbuf = (int *) malloc(nInputSamples * sizeof(int));
+    bitbuf = (unsigned char *) malloc(nMaxOutputBytes * sizeof(unsigned char));
+    int nByteCount = 0;
+    unsigned int nBufferSize = (unsigned int) len / 2;
+    unsigned short *buf = (unsigned short *) b_buffer;
+    while (nByteCount < nBufferSize) {
+        int audioLength = nInputSamples;
+        if ((nByteCount + nInputSamples) >= nBufferSize) {
+            audioLength = nBufferSize - nByteCount;
+        }
+        int i;
+        for (i = 0; i < audioLength; i++) {//ÊØèÊ¨°‰ªéÂÆûÊó∂ÁöÑpcmÈü≥È¢ëÈòüÂàó‰∏≠ËØªÂá∫ÈáèÂåñ‰ΩçÊï∞‰∏∫8ÁöÑpcmÊï∞ÊçÆ„ÄÇ
+            int s = ((int16_t *) buf + nByteCount)[i];
+            pcmbuf[i] = s << 8;//Áî®8‰∏™‰∫åËøõÂà∂‰ΩçÊù•Ë°®Á§∫‰∏Ä‰∏™ÈááÊ†∑ÈáèÂåñÁÇπÔºàÊ®°Êï∞ËΩ¨Êç¢Ôºâ
+        }
+        nByteCount += nInputSamples;
+        //Âà©Áî®FAACËøõË°åÁºñÁ†ÅÔºåpcmbuf‰∏∫ËΩ¨Êç¢ÂêéÁöÑpcmÊµÅÊï∞ÊçÆÔºåaudioLength‰∏∫Ë∞ÉÁî®faacEncOpenÊó∂ÂæóÂà∞ÁöÑËæìÂÖ•ÈááÊ†∑Êï∞Ôºåbitbuf‰∏∫ÁºñÁ†ÅÂêéÁöÑÊï∞ÊçÆbuffÔºånMaxOutputBytes‰∏∫Ë∞ÉÁî®faacEncOpenÊó∂ÂæóÂà∞ÁöÑÊúÄÂ§ßËæìÂá∫Â≠óËäÇÊï∞
+        int byteslen = faacEncEncode(audio_encode_handle, pcmbuf, audioLength,
+                                     bitbuf, nMaxOutputBytes);
+        if (byteslen < 1) {
+            continue;
+        }
+        add_aac_body(bitbuf, byteslen);//‰ªébitbuf‰∏≠ÂæóÂà∞ÁºñÁ†ÅÂêéÁöÑaacÊï∞ÊçÆÊµÅÔºåÊîæÂà∞Êï∞ÊçÆÈòüÂàó
+    }
+    (*env)->ReleaseByteArrayElements(env, buffer, b_buffer, 0);
+    if (bitbuf)
+        free(bitbuf);
+    if (pcmbuf)
+        free(pcmbuf);
 }
