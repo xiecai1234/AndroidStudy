@@ -5,6 +5,7 @@ import com.dongnaoedu.live.jni.PushNative;
 import com.dongnaoedu.live.listener.LiveStateChangeListener;
 import com.dongnaoedu.live.pusher.LivePusher;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.os.Bundle;
 import android.os.Handler;
@@ -16,9 +17,10 @@ import android.widget.Toast;
 
 public class MainActivity extends Activity implements LiveStateChangeListener {
 
-	static final String URL = "rtmp://8.134.239.62//live/test";
+	static final String URL = "rtmp://8.134.239.62/live/test";
 	private LivePusher live;
 	
+	@SuppressLint("HandlerLeak")
 	private Handler handler = new Handler(){
 		public void handleMessage(android.os.Message msg) {
 			switch (msg.what) {

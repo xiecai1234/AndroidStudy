@@ -205,7 +205,7 @@ JNIEXPORT void JNICALL Java_com_dongnaoedu_live_jni_PushNative_startPush
     jmid_throw_native_error = (*env)->GetMethodID(env, jcls_push_native_tmp, "throwNativeError",
                                                   "(I)V");
 
-    //初始化的操作
+    //初始化的操作  TODO
     const char *url_cstr = (*env)->GetStringUTFChars(env, url_jstr, NULL);
     //复制url_cstr内容到rtmp_path
     rtmp_path = malloc(strlen(url_cstr) + 1);
@@ -236,6 +236,7 @@ JNIEXPORT void JNICALL Java_com_dongnaoedu_live_jni_PushNative_release
         (JNIEnv *env, jobject jobj) {
     (*env)->DeleteGlobalRef(env, jcls_push_native);
     (*env)->DeleteGlobalRef(env, jobj_push_native);
+    //TODO
     (*env)->DeleteGlobalRef(env, jmid_throw_native_error);
 }
 
