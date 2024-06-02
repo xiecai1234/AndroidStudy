@@ -43,7 +43,7 @@ public class MainActivity extends Activity implements LiveStateChangeListener {
 		setContentView(R.layout.activity_main);
 		SurfaceView surfaceView = (SurfaceView) findViewById(R.id.surface);
 		//相机图像的预览
-		live = new LivePusher(surfaceView.getHolder());
+		live = new LivePusher(this, surfaceView.getHolder());
 	}
 
 	/**

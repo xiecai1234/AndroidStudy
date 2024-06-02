@@ -11,6 +11,9 @@ set(yuv_head_dir ${CMAKE_CURRENT_SOURCE_DIR}/include/libyuv)
 set(x264_head_dir ${CMAKE_CURRENT_SOURCE_DIR}/include/x264)
 set(faac_head_dir ${CMAKE_CURRENT_SOURCE_DIR}/include/faac)
 set(rtmp_head_dir ${CMAKE_CURRENT_SOURCE_DIR}/include/rtmpdump)
+
+#不打包，方便查看源码用
+set(x264_all_src_dir ${CMAKE_CURRENT_SOURCE_DIR}/source_code/x264-master)
 # 1. 定义库文件所在目录，方便后面使用
 set(lib_dir ${CMAKE_CURRENT_SOURCE_DIR}/../jniLibs/${ANDROID_ABI})
 
@@ -20,6 +23,8 @@ include_directories(${yuv_head_dir})
 include_directories(${x264_head_dir})
 include_directories(${faac_head_dir})
 include_directories(${rtmp_head_dir})
+#不打包，方便查看源码用
+include_directories(${x264_all_src_dir})
 # 3. 指定待链接的库文件所在目录
 link_directories(${lib_dir})
 

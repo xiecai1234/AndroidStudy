@@ -5,18 +5,23 @@ import com.dongnaoedu.live.listener.LiveStateChangeListener;
 import com.dongnaoedu.live.params.AudioParam;
 import com.dongnaoedu.live.params.VideoParam;
 
+import android.content.Context;
 import android.hardware.Camera.CameraInfo;
+import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceHolder.Callback;
 
 public class LivePusher implements Callback {
 
+	private static final String TAG = "xcb_LivePusher";
+	Context context;
 	private SurfaceHolder surfaceHolder;
 	private VideoPusher videoPusher;
 	private AudioPusher audioPusher;
 	private PushNative pushNative;
 
-	public LivePusher(SurfaceHolder surfaceHolder) {
+	public LivePusher(Context context, SurfaceHolder surfaceHolder) {
+		this.context = context;
 		this.surfaceHolder = surfaceHolder;
 		surfaceHolder.addCallback(this);
 		prepare();
@@ -30,7 +35,7 @@ public class LivePusher implements Callback {
 		
 		//实例化视频推流器
 		VideoParam videoParam = new VideoParam(1920, 1080, CameraInfo.CAMERA_FACING_BACK);
-		videoPusher = new VideoPusher(surfaceHolder,videoParam,pushNative);
+		videoPusher = new VideoPusher(context, surfaceHolder,videoParam,pushNative);
 		
 		//实例化音频推流器
 		AudioParam audioParam = new AudioParam();
@@ -51,7 +56,8 @@ public class LivePusher implements Callback {
 	 */
 	public void startPush(String url,LiveStateChangeListener liveStateChangeListener) {
 		videoPusher.startPush();
-		audioPusher.startPush();
+		//TODO 先测试视频再测音频
+//		audioPusher.startPush();
 		pushNative.startPush(url);
 		pushNative.setLiveStateChangeListener(liveStateChangeListener);
 	}
@@ -88,6 +94,7 @@ public class LivePusher implements Callback {
 
 	@Override
 	public void surfaceDestroyed(SurfaceHolder holder) {
+		Log.i(TAG, "surfaceDestroyed");
 		stopPush();
 		release();
 	}
