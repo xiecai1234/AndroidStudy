@@ -18,7 +18,7 @@ public class FileUtil {
         InputStream is = null;
         OutputStream out = null;
         try {
-            out = new FileOutputStream(fileName, true);
+            out = new FileOutputStream(fileName, false);//TODO
             is = new ByteArrayInputStream(data);
             byte[] buff = new byte[1024];
             int len = 0;

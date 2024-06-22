@@ -164,9 +164,9 @@ public class VideoPusher extends Pusher implements Callback, PreviewCallback{
 //		if(mCamera != null){
 //			mCamera.addCallbackBuffer(buffers);
 //		}
-//		FileUtil.writeBytesToFile(Const.NAME, data);
+		FileUtil.writeBytesToFile(Const.NAME, data);
 
-		saveData2(data, size);
+//		saveData2(data, size);
 		if(isPushing){
 			//回调函数中获取图像数据，然后给Native代码编码
 			pushNative.fireVideo(data);

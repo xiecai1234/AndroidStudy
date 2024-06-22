@@ -116,6 +116,20 @@ void fireVideo(JNIEnv *env, jobject jobj, jbyteArray buffer) {
         LOGE("%s", "编码失败");
         return;
     }
+
+    // 测试代码
+//    int j;
+//    x264_nal_t* ppp = nal;
+//    LOGI("编码成功，nalu个数：%d",n_nal)
+//    for (i = 0; i < n_nal; i++) {
+//        LOGI("当前nal的payload长度：%d", ppp->i_payload)
+//        for (j = 0; j < ppp->i_payload; j++) {
+//            LOGE("%d", ppp->p_payload[j])
+//        }
+//        ppp++;
+//    }
+
+
     //使用rtmp协议将h264编码的视频数据发送给流媒体服务器
     //帧分为关键帧和普通帧，为了提高画面的纠错率，关键帧应包含SPS和PPS数据
     int sps_len, pps_len;
@@ -136,7 +150,7 @@ void fireVideo(JNIEnv *env, jobject jobj, jbyteArray buffer) {
             pps_len = nal[i].i_payload - 4;
             memcpy(pps, nal[i].p_payload + 4, pps_len); //不复制四字节起始码
 
-            //发送序列信息
+            //发送序列信息 SPS总是在PPS前面？
             //h264关键帧会包含SPS和PPS数据
             add_264_sequence_header(pps, sps, pps_len, sps_len);
         } else {
